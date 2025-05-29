@@ -1,0 +1,84 @@
+Q1.By default are django signals executed synchronously or asynchronously? Please support your answer with a code snippet that conclusively proves your stance. The code does not need to be elegant and production ready, we just need to understand your logic.
+
+Answer:- By default, Django signals are executed synchronously.
+
+from django.db import models
+from django.db.models.signals import post_save
+import time
+
+class TestModel(models.Model):
+    name = models.CharField(max_length=100)
+
+@receiver(post_save, sender=TestModel)
+def signal_handler(sender, instance, **kwargs):
+    print("Signal started")
+    time.sleep(5)
+    print("Signal finished")
+
+# views.py
+from django.http import HttpResponse
+from .models import TestModel
+import time
+
+def test_view(request):
+    start = time.time()
+    TestModel.objects.create(name="Test")
+    end = time.time()
+    print("View execution time:", end - start)
+    return HttpResponse("Done")
+
+Q2. Do django signals run in the same thread as the caller? Please support your answer with a code snippet that conclusively proves your stance. The code does not need to be elegant and production ready, we just need to understand your logic.
+
+Answer:- Yes, by default Django signals run in the same thread as the caller.
+
+# models.py
+import threading
+from django.db import models
+from django.db.models.signals import post_save
+
+class ThreadTestModel(models.Model):
+    name = models.CharField(max_length=100)
+
+@receiver(post_save, sender=ThreadTestModel)
+def thread_signal(sender, instance, **kwargs):
+    print("Signal thread ID:", threading.get_ident())
+
+Q3.By default do django signals run in the same database transaction as the caller? Please support your answer with a code snippet that conclusively proves your stance. The code does not need to be elegant and production ready, we just need to understand your logic.
+
+Answer:- Yes, by default, signals like post_save run inside the same transaction, unless explicitly deferred using tools like on_commit.
+
+
+from django.db import models, connection
+from django.db.models.signals import post_save
+
+class TxModel(models.Model):
+    name = models.CharField(max_length=100)
+
+@receiver(post_save, sender=TxModel)
+def tx_signal(sender, instance, **kwargs):
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT COUNT(*) FROM yourapp_txmodel")
+        print("Count in signal:", cursor.fetchone()[0])
+
+
+--------------Class of Rectangle-------
+
+class Rectangle:
+    def __init__(self, length: int, width: int):
+        self.length = length
+        self.width = width
+
+    def __iter__(self):
+        yield {'length': self.length}
+        yield {'width': self.width}
+
+r = Rectangle(5, 3)
+for dim in r:
+    print(dim)
+
+
+Output:-
+{'length': 5}
+{'width': 3}
+
+
